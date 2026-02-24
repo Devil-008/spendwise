@@ -37,7 +37,13 @@
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow SpendWise to use Face ID to unlock the app."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

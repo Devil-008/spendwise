@@ -6,7 +6,17 @@ const KEYS = {
   PROFILE: '@spendwise_profile',
   SETTINGS: '@spendwise_settings',
   AUTH: '@spendwise_auth',
+  BIOMETRIC_ENABLED: '@spendwise_biometric_enabled',
 };
+
+export async function loadBiometricEnabled(): Promise<boolean> {
+  const data = await AsyncStorage.getItem(KEYS.BIOMETRIC_ENABLED);
+  return data === 'true';
+}
+
+export async function saveBiometricEnabled(enabled: boolean): Promise<void> {
+  await AsyncStorage.setItem(KEYS.BIOMETRIC_ENABLED, enabled.toString());
+}
 
 export async function loadExpenses(): Promise<Expense[]> {
   const data = await AsyncStorage.getItem(KEYS.EXPENSES);
@@ -48,5 +58,5 @@ export async function clearAuth(): Promise<void> {
 }
 
 export async function clearAllData(): Promise<void> {
-  await AsyncStorage.multiRemove([KEYS.EXPENSES, KEYS.PROFILE, KEYS.SETTINGS, KEYS.AUTH]);
+  await AsyncStorage.multiRemove([KEYS.EXPENSES, KEYS.PROFILE, KEYS.SETTINGS, KEYS.AUTH, KEYS.BIOMETRIC_ENABLED]);
 }

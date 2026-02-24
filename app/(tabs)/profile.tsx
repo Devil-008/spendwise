@@ -1,19 +1,68 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, Alert, Switch, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import * as LocalAuthentication from 'expo-local-authentication';
 import { router } from 'expo-router';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useProfile } from '@/contexts/ProfileContext';
 import { useExpenses } from '@/contexts/ExpenseContext';
+import { loadBiometricEnabled, saveBiometricEnabled } from '@/lib/storage';
 
 export default function ProfileScreen() {
   const { colors, fontSize, isDark, toggleTheme, increaseFontSize, decreaseFontSize } = useTheme();
   const { profile, logout, resetAllData } = useProfile();
   const { clearAll } = useExpenses();
   const insets = useSafeAreaInsets();
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+
+  useEffect(() => {
+    loadBiometricEnabled().then(setBiometricEnabled);
+  }, []);
+
+  const handleBiometricToggle = async (value: boolean) => {
+    if (value) {
+      // Check hardware support
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      if (!hasHardware) {
+        Alert.alert('Not Available', 'Your device does not support biometric authentication.');
+        return;
+      }
+
+      // Check enrollment
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!isEnrolled) {
+        Alert.alert(
+          'Not Set Up',
+          'No fingerprint or face is registered on this device. Please set up biometrics in your device settings first.',
+        );
+        return;
+      }
+
+      // Authenticate to confirm
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Confirm your identity',
+        fallbackLabel: 'Use Passcode',
+        disableDeviceFallback: false,
+      });
+
+      if (!result.success) return;
+
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      await saveBiometricEnabled(true);
+      setBiometricEnabled(true);
+    } else {
+      if (Platform.OS !== 'web') {
+        Haptics.selectionAsync();
+      }
+      await saveBiometricEnabled(false);
+      setBiometricEnabled(false);
+    }
+  };
 
   const handleResetData = () => {
     Alert.alert(
@@ -30,6 +79,7 @@ export default function ProfileScreen() {
             }
             clearAll();
             await resetAllData();
+            setBiometricEnabled(false);
             router.replace('/login');
           },
         },
@@ -136,6 +186,30 @@ export default function ProfileScreen() {
               <Ionicons name="add" size={18} color={colors.text} />
             </Pressable>
           </View>
+        </View>
+      </View>
+
+      {/* SECURITY SECTION */}
+      <View style={[styles.section, { backgroundColor: colors.surface }]}>
+        <Text style={[styles.sectionLabel, { color: colors.textTertiary, fontFamily: 'Inter_600SemiBold', fontSize: fontSize - 3 }]}>
+          SECURITY
+        </Text>
+
+        <View style={styles.settingRow}>
+          <View style={styles.settingLeft}>
+            <View style={[styles.settingIconBg, { backgroundColor: isDark ? '#1E3A3A' : '#D1FAE5' }]}>
+              <Ionicons name="finger-print" size={18} color={isDark ? '#34D399' : '#059669'} />
+            </View>
+            <Text style={[styles.settingText, { color: colors.text, fontFamily: 'Inter_500Medium', fontSize }]}>
+              Fingerprint Lock
+            </Text>
+          </View>
+          <Switch
+            value={biometricEnabled}
+            onValueChange={handleBiometricToggle}
+            trackColor={{ false: colors.border, true: colors.tint }}
+            thumbColor="#fff"
+          />
         </View>
       </View>
 

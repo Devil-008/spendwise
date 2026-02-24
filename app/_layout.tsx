@@ -2,8 +2,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack, router, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
-import { View, StyleSheet } from "react-native";
+import React, { useEffect, useState, useRef } from "react";
+import { View, StyleSheet, AppState, AppStateStatus } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from "@expo-google-fonts/inter";
@@ -15,6 +15,7 @@ import { queryClient } from "@/lib/query-client";
 import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
 import { ExpenseProvider } from "@/contexts/ExpenseContext";
 import { ProfileProvider, useProfile } from "@/contexts/ProfileContext";
+import { loadBiometricEnabled } from "@/lib/storage";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -67,18 +68,52 @@ function AuthRouter() {
   const { isDark } = useTheme();
   const [showSplash, setShowSplash] = useState(true);
   const segments = useSegments();
+  const appStateRef = useRef(AppState.currentState);
+  const hasCheckedBiometric = useRef(false);
 
+  // Check biometric on initial authenticated load
   useEffect(() => {
-    if (profileLoading || showSplash) return;
+    if (profileLoading || showSplash || hasCheckedBiometric.current) return;
 
-    const inLoginGroup = segments[0] === 'login';
-
-    if (!isAuthenticated && !inLoginGroup) {
-      router.replace('/login');
-    } else if (isAuthenticated && inLoginGroup) {
-      router.replace('/(tabs)');
+    if (isAuthenticated) {
+      hasCheckedBiometric.current = true;
+      loadBiometricEnabled().then((enabled) => {
+        if (enabled) {
+          router.replace('/lock');
+        } else {
+          const inLoginGroup = segments[0] === 'login';
+          if (inLoginGroup) {
+            router.replace('/(tabs)');
+          }
+        }
+      });
+    } else {
+      const inLoginGroup = segments[0] === 'login';
+      if (!inLoginGroup) {
+        router.replace('/login');
+      }
     }
   }, [isAuthenticated, profileLoading, showSplash, segments]);
+
+  // Listen for app state changes to re-lock when returning from background
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+      if (
+        appStateRef.current.match(/inactive|background/) &&
+        nextAppState === 'active' &&
+        isAuthenticated
+      ) {
+        loadBiometricEnabled().then((enabled) => {
+          if (enabled) {
+            router.replace('/lock');
+          }
+        });
+      }
+      appStateRef.current = nextAppState;
+    });
+
+    return () => subscription.remove();
+  }, [isAuthenticated]);
 
   if (showSplash) {
     return <SplashAnimation onFinish={() => setShowSplash(false)} />;
@@ -89,6 +124,7 @@ function AuthRouter() {
       <StatusBar style={isDark ? "light" : "dark"} />
       <Stack screenOptions={{ headerShown: false, headerBackTitle: "Back" }}>
         <Stack.Screen name="login" options={{ animation: "fade" }} />
+        <Stack.Screen name="lock" options={{ animation: "fade", gestureEnabled: false }} />
         <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
       </Stack>
     </>
