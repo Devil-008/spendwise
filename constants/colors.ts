@@ -1,12 +1,52 @@
-// template
-const tintColorLight = "#2f95dc";
-
-export default {
+const Colors = {
   light: {
-    text: "#000",
-    background: "#fff",
-    tint: tintColorLight,
-    tabIconDefault: "#ccc",
-    tabIconSelected: tintColorLight,
+    background: '#F5F6FA',
+    surface: '#FFFFFF',
+    surfaceSecondary: '#F0F1F5',
+    text: '#1A1D26',
+    textSecondary: '#6B7085',
+    textTertiary: '#9EA2B8',
+    tint: '#0D9488',
+    tintLight: '#CCFBF1',
+    accent: '#F59E0B',
+    accentLight: '#FEF3C7',
+    income: '#10B981',
+    incomeLight: '#D1FAE5',
+    expense: '#EF4444',
+    expenseLight: '#FEE2E2',
+    border: '#E5E7EB',
+    tabIconDefault: '#9EA2B8',
+    tabIconSelected: '#0D9488',
+    cardGradientStart: '#0D9488',
+    cardGradientEnd: '#065F56',
+    shadow: 'rgba(0,0,0,0.08)',
+    overlay: 'rgba(0,0,0,0.5)',
+  },
+  dark: {
+    background: '#0F1117',
+    surface: '#1A1D28',
+    surfaceSecondary: '#252836',
+    text: '#F0F1F5',
+    textSecondary: '#9EA2B8',
+    textTertiary: '#6B7085',
+    tint: '#14B8A6',
+    tintLight: '#134E4A',
+    accent: '#FBBF24',
+    accentLight: '#78350F',
+    income: '#34D399',
+    incomeLight: '#064E3B',
+    expense: '#F87171',
+    expenseLight: '#7F1D1D',
+    border: '#2D3141',
+    tabIconDefault: '#6B7085',
+    tabIconSelected: '#14B8A6',
+    cardGradientStart: '#14B8A6',
+    cardGradientEnd: '#0D9488',
+    shadow: 'rgba(0,0,0,0.3)',
+    overlay: 'rgba(0,0,0,0.7)',
   },
 };
+
+export type ThemeColors = typeof Colors.light;
+
+export default Colors;
