@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TextInput, Pressable, Platform, Alert, Modal } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TextInput, Pressable, Platform, Alert, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, interpolateColor, useAnimatedProps } from 'react-native-reanimated';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useExpenses } from '@/contexts/ExpenseContext';
 import { CATEGORIES, ExpenseType } from '@/lib/types';
-import { format, subDays, addDays, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay } from 'date-fns';
 
 function MiniCalendar({ selected, onSelect, colors, fontSize }: { selected: Date; onSelect: (d: Date) => void; colors: any; fontSize: number }) {
   const [viewMonth, setViewMonth] = useState(new Date(selected));
@@ -86,6 +86,7 @@ export default function AddExpenseScreen() {
   const { colors, fontSize } = useTheme();
   const { addExpense } = useExpenses();
   const insets = useSafeAreaInsets();
+  const { width: screenWidth } = useWindowDimensions();
 
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
@@ -95,14 +96,17 @@ export default function AddExpenseScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
 
-  const togglePos = useSharedValue(0);
+  const toggleProgress = useSharedValue(0);
+  const toggleContainerWidth = screenWidth - 40 - 8;
+  const halfWidth = toggleContainerWidth / 2;
 
   useEffect(() => {
-    togglePos.value = withSpring(type === 'expense' ? 0 : 1, { damping: 15 });
+    toggleProgress.value = withSpring(type === 'expense' ? 0 : 1, { damping: 18, stiffness: 150 });
   }, [type]);
 
-  const toggleStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: togglePos.value * 130 }],
+  const toggleIndicatorStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: toggleProgress.value * halfWidth }],
+    width: halfWidth,
   }));
 
   const handleSubmit = () => {
@@ -158,22 +162,46 @@ export default function AddExpenseScreen() {
 
       <View style={styles.formContainer}>
         <View style={[styles.toggleContainer, { backgroundColor: colors.surfaceSecondary }]}>
-          <Animated.View style={[styles.toggleIndicator, toggleStyle]}>
+          <Animated.View style={[styles.toggleIndicator, toggleIndicatorStyle]}>
             <LinearGradient
-              colors={type === 'expense' ? [colors.expense, '#DC2626'] : [colors.income, '#059669']}
+              colors={type === 'expense' ? ['#EF4444', '#DC2626'] : ['#10B981', '#059669']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.toggleGradient}
             />
           </Animated.View>
-          <Pressable style={styles.toggleButton} onPress={() => setType('expense')}>
+          <Pressable
+            style={styles.toggleButton}
+            onPress={() => {
+              setType('expense');
+              if (Platform.OS !== 'web') Haptics.selectionAsync();
+            }}
+          >
+            <Ionicons
+              name="trending-down-outline"
+              size={18}
+              color={type === 'expense' ? '#fff' : colors.textSecondary}
+              style={{ marginRight: 6 }}
+            />
             <Text style={[styles.toggleText, {
               color: type === 'expense' ? '#fff' : colors.textSecondary,
               fontFamily: 'Inter_600SemiBold',
               fontSize: fontSize - 1,
             }]}>Expense</Text>
           </Pressable>
-          <Pressable style={styles.toggleButton} onPress={() => setType('income')}>
+          <Pressable
+            style={styles.toggleButton}
+            onPress={() => {
+              setType('income');
+              if (Platform.OS !== 'web') Haptics.selectionAsync();
+            }}
+          >
+            <Ionicons
+              name="trending-up-outline"
+              size={18}
+              color={type === 'income' ? '#fff' : colors.textSecondary}
+              style={{ marginRight: 6 }}
+            />
             <Text style={[styles.toggleText, {
               color: type === 'income' ? '#fff' : colors.textSecondary,
               fontFamily: 'Inter_600SemiBold',
@@ -199,7 +227,7 @@ export default function AddExpenseScreen() {
         <View style={styles.fieldGroup}>
           <Text style={[styles.fieldLabel, { color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: fontSize - 2 }]}>Amount</Text>
           <View style={[styles.inputRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.currencySign, { color: colors.tint, fontFamily: 'Inter_700Bold', fontSize: fontSize + 4 }]}>$</Text>
+            <Text style={[styles.currencySign, { color: colors.tint, fontFamily: 'Inter_700Bold', fontSize: fontSize + 4 }]}>{'\u20B9'}</Text>
             <TextInput
               style={[styles.textInput, styles.amountInput, { color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: fontSize + 4 }]}
               placeholder="0.00"
@@ -307,7 +335,7 @@ export default function AddExpenseScreen() {
             end={{ x: 1, y: 0 }}
             style={styles.submitGradient}
           >
-            <Ionicons name="add-circle" size={22} color="#fff" />
+            <Ionicons name="checkmark-circle" size={22} color="#fff" />
             <Text style={[styles.submitText, { fontFamily: 'Inter_600SemiBold', fontSize: fontSize + 1 }]}>
               Add {type === 'income' ? 'Income' : 'Expense'}
             </Text>
@@ -324,10 +352,10 @@ const styles = StyleSheet.create({
   headerArea: { paddingHorizontal: 20, paddingBottom: 12 },
   pageTitle: {},
   formContainer: { paddingHorizontal: 20, gap: 20 },
-  toggleContainer: { flexDirection: 'row', borderRadius: 14, padding: 4, position: 'relative' },
-  toggleIndicator: { position: 'absolute', top: 4, left: 4, width: 130, height: 44, borderRadius: 11, overflow: 'hidden' },
-  toggleGradient: { flex: 1, borderRadius: 11 },
-  toggleButton: { flex: 1, height: 44, alignItems: 'center', justifyContent: 'center', zIndex: 1 },
+  toggleContainer: { flexDirection: 'row', borderRadius: 16, padding: 4, position: 'relative', overflow: 'hidden' },
+  toggleIndicator: { position: 'absolute', top: 4, left: 4, height: 48, borderRadius: 13, overflow: 'hidden' },
+  toggleGradient: { flex: 1, borderRadius: 13 },
+  toggleButton: { flex: 1, height: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', zIndex: 1 },
   toggleText: {},
   fieldGroup: { gap: 8 },
   fieldLabel: { marginLeft: 4 },

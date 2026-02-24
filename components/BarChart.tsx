@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withDelay, withTiming } from 'react-native-reanimated';
 import { useTheme } from '@/contexts/ThemeContext';
+import { formatRupeeShort } from '@/lib/types';
 
 interface BarData {
   label: string;
@@ -27,15 +28,10 @@ function AnimatedBar({ item, maxVal, height, index }: { item: BarData; maxVal: n
     height: barHeight.value,
   }));
 
-  const formatShort = (v: number) => {
-    if (v >= 1000) return '$' + (v / 1000).toFixed(1) + 'k';
-    return '$' + v.toFixed(0);
-  };
-
   return (
     <View style={styles.barColumn}>
       <Text style={[styles.barValue, { color: colors.textSecondary, fontSize: fontSize - 5, fontFamily: 'Inter_500Medium' }]}>
-        {item.value > 0 ? formatShort(item.value) : ''}
+        {item.value > 0 ? formatRupeeShort(item.value) : ''}
       </Text>
       <Animated.View style={[styles.bar, { backgroundColor: item.color, borderRadius: 6 }, barStyle]} />
       <Text style={[styles.barLabel, { color: colors.textTertiary, fontSize: fontSize - 5, fontFamily: 'Inter_500Medium' }]}>

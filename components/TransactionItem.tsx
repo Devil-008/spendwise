@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Expense, getCategoryLabel, getCategoryIcon, CATEGORY_COLORS } from '@/lib/types';
+import { Expense, getCategoryLabel, getCategoryIcon, CATEGORY_COLORS, formatRupee } from '@/lib/types';
 import { format } from 'date-fns';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, SlideOutRight } from 'react-native-reanimated';
@@ -22,10 +22,6 @@ export default function TransactionItem({ item, onDelete }: TransactionItemProps
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     onDelete(item.id);
-  };
-
-  const formatAmount = (val: number) => {
-    return '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
   return (
@@ -64,7 +60,7 @@ export default function TransactionItem({ item, onDelete }: TransactionItemProps
             },
           ]}
         >
-          {isIncome ? '+' : '-'}{formatAmount(item.amount)}
+          {isIncome ? '+' : '-'}{formatRupee(item.amount)}
         </Text>
       </Pressable>
     </Animated.View>

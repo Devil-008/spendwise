@@ -2,8 +2,9 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useTheme } from '@/contexts/ThemeContext';
+import { formatRupee } from '@/lib/types';
 
 interface BalanceCardProps {
   balance: number;
@@ -26,11 +27,6 @@ export default function BalanceCard({ balance, income, expense }: BalanceCardPro
     transform: [{ translateY: translateY.value }],
   }));
 
-  const formatCurrency = (val: number) => {
-    const abs = Math.abs(val);
-    return (val < 0 ? '-' : '') + '$' + abs.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  };
-
   return (
     <Animated.View style={animStyle}>
       <LinearGradient
@@ -40,7 +36,7 @@ export default function BalanceCard({ balance, income, expense }: BalanceCardPro
         style={styles.card}
       >
         <Text style={[styles.label, { fontSize: fontSize - 2 }]}>Total Balance</Text>
-        <Text style={[styles.balance, { fontSize: Math.min(fontSize + 16, 36) }]}>{formatCurrency(balance)}</Text>
+        <Text style={[styles.balance, { fontSize: Math.min(fontSize + 16, 36) }]}>{formatRupee(balance)}</Text>
 
         <View style={styles.row}>
           <View style={styles.statItem}>
@@ -50,7 +46,7 @@ export default function BalanceCard({ balance, income, expense }: BalanceCardPro
               </View>
               <Text style={[styles.statLabel, { fontSize: fontSize - 3 }]}>Income</Text>
             </View>
-            <Text style={[styles.statAmount, { fontSize: fontSize + 2 }]}>{formatCurrency(income)}</Text>
+            <Text style={[styles.statAmount, { fontSize: fontSize + 2 }]}>{formatRupee(income)}</Text>
           </View>
 
           <View style={[styles.divider]} />
@@ -62,7 +58,7 @@ export default function BalanceCard({ balance, income, expense }: BalanceCardPro
               </View>
               <Text style={[styles.statLabel, { fontSize: fontSize - 3 }]}>Expense</Text>
             </View>
-            <Text style={[styles.statAmount, { fontSize: fontSize + 2 }]}>{formatCurrency(expense)}</Text>
+            <Text style={[styles.statAmount, { fontSize: fontSize + 2 }]}>{formatRupee(expense)}</Text>
           </View>
         </View>
       </LinearGradient>
